@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPL Admin | Manage Squads (Live)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <style>
+        :root { --p-blue: #001a33; --gold: #FFD700; --danger: #e74c3c; }
+        body { font-family: 'Poppins', sans-serif; background: #f0f2f5; margin: 0; }
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--p-blue); display: flex; justify-content: center; align-items: center; z-index: 10000; }
+        .login-card { background: white; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 320px; }
+        .login-card h2 { font-family: 'Anton'; color: var(--p-blue); margin-bottom: 20px; }
+        .login-card input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn-login { background: var(--p-blue); color: white; border: none; width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        #admin-wrapper { display: none; }
+        .sidebar { width: 260px; background: var(--p-blue); height: 100vh; color: white; padding: 30px 20px; position: fixed; }
+        .sidebar h2 { font-family: 'Anton'; color: var(--gold); border-bottom: 2px solid var(--gold); padding-bottom: 10px; margin-bottom: 30px; }
+        .main-content { margin-left: 300px; padding: 40px; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-grid input, .form-grid textarea { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; font-family: 'Poppins'; width: 100%; box-sizing: border-box; }
+        textarea { grid-column: span 2; height: 100px; resize: vertical; }
+        .btn-add { background: #27ae60; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; width: 100%; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; }
+        th { background: #f8f9fa; color: #333; padding: 15px; text-align: left; border-bottom: 2px solid #eee; }
+        td { padding: 15px; border-bottom: 1px solid #eee; }
+        .team-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold); }
+        .btn-delete { background: var(--danger); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+        .logout-btn { color: white; text-decoration: none; display: block; margin-top: 50px; font-size: 0.9rem; opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-card">
+            <h2>MPL ADMIN</h2>
+            <input type="password" id="passInput" placeholder="Password">
+            <button class="btn-login" onclick="verifyLogin()">Login</button>
+            <p id="error" style="color: red; font-size: 0.8rem; margin-top: 10px; display: none;">Wrong Password!</p>
+        </div>
+    </div>
+
+    <div id="admin-wrapper">
+        <div class="sidebar">
+            <h2>MPL DASHBOARD</h2>
+            <p><i class="fas fa-users-cog"></i> Team Management</p>
+            <a href="index.html" style="color: var(--gold); text-decoration: none;"><i class="fas fa-globe"></i> View Site</a>
+            <a href="#" class="logout-btn" onclick="location.reload()">Logout</a>
+        </div>
+
+        <div class="main-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h1>Manage Teams (Live Database)</h1>
+                <div id="stats" style="background: var(--gold); padding: 5px 15px; border-radius: 50px; font-weight: bold;">Total Teams: 0</div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top: 0; color: #555;">Add Team from Email Data</h3>
+                <div class="form-grid">
+                    <input type="text" id="tName" placeholder="Team Name">
+                    <input type="text" id="vName" placeholder="Village Name">
+                    <input type="text" id="cName" placeholder="Captain Name">
+                    <input type="text" id="vcName" placeholder="Vice Captain Name">
+                    <input type="text" id="imgUrl" placeholder="Captain Photo URL (Link)">
+                    <textarea id="squadList" placeholder="Enter players separated by commas (e.g. Rahul, Amit, Sonu...)"></textarea>
+                </div>
+                <button class="btn-add" onclick="saveNewTeam()" style="margin-top: 20px;">Save & Publish to All Phones</button>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Photo</th>
+                        <th>Team</th>
+                        <th>Captain</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="adminTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            databaseURL: "https://mpl-markatta-default-rtdb.firebaseio.com/" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const SECRET = "@1Aankit";
+
+        function verifyLogin() {
+            if(document.getElementById('passInput').value === SECRET) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('admin-wrapper').style.display = 'block';
+                showTeams(); // Firebase se data load karein
+            } else { document.getElementById('error').style.display = 'block'; }
+        }
+
+        function saveNewTeam() {
+            const squadRaw = document.getElementById('squadList').value;
+            const squadArray = squadRaw.split(',').map(p => p.trim()).filter(p => p !== "");
+
+            const team = {
+                teamName: document.getElementById('tName').value,
+                village: document.getElementById('vName').value,
+                captain: document.getElementById('cName').value,
+                vc: document.getElementById('vcName').value,
+                profilePic: document.getElementById('imgUrl').value || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
+                squad: squadArray
+            };
+
+            if(!team.teamName || squadArray.length === 0) return alert("Please fill Team Name and Squad!");
+
+            // Firebase mein push karna
+            db.ref('teams').push(team).then(() => {
+                alert("Team Successfullly Live Ho Gayi!");
+                // Clear fields
+                document.querySelectorAll('.form-grid input, .form-grid textarea').forEach(inp => inp.value = "");
+            }).catch(err => {
+                alert("Error: " + err.message);
+            });
+        }
+
+        // Realtime Listener (Data load and sync)
+        function showTeams() {
+            db.ref('teams').on('value', (snapshot) => {
+                const container = document.getElementById('adminTable');
+                container.innerHTML = "";
+                const data = snapshot.val();
+                
+                let count = 0;
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        const t = data[key];
+                        count++;
+                        container.innerHTML += `
+                            <tr>
+                                <td><img src="${t.profilePic}" class="team-img"></td>
+                                <td><strong>${t.teamName}</strong><br><small>${t.village}</small></td>
+                                <td>${t.captain}</td>
+                                <td><button class="btn-delete" onclick="removeTeam('${key}')">Delete</button></td>
+                            </tr>
+                        `;
+                    });
+                }
+                document.getElementById('stats').innerText = "Total Teams: " + count;
+            });
+        }
+
+        function removeTeam(key) {
+            if(confirm("Delete team from live database?")) {
+                db.ref('teams/' + key).remove();
+            }
+        }
+    </script>
+</body>
+</html>

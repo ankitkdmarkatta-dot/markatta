@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Team | MPL 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --p-blue: #000d1a; --gold: #FFD700; --glass: rgba(255, 255, 255, 0.05); }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: radial-gradient(circle at top, #001a33, #000810); color: white; min-height: 100vh; padding: 40px 20px; box-sizing: border-box; }
+        .form-card { background: var(--glass); backdrop-filter: blur(15px); padding: 40px; border-radius: 30px; width: 100%; max-width: 650px; margin: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.6); border: 1px solid rgba(255, 215, 0, 0.2); }
+        h1 { font-family: 'Anton'; color: var(--gold); text-align: center; font-size: 3rem; margin-bottom: 5px; letter-spacing: 2px; }
+        .step-indicator { text-align: center; margin-bottom: 35px; color: var(--gold); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.8; }
+        .form-step { display: none; animation: fadeIn 0.4s ease-out; }
+        .form-step.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .form-group { margin-bottom: 25px; }
+        label { display: block; margin-bottom: 10px; font-weight: 600; font-size: 0.9rem; color: #eee; }
+        input[type="text"], input[type="tel"] { width: 100%; padding: 15px; border-radius: 12px; border: none; background: rgba(255, 255, 255, 0.9); color: #000; font-size: 1rem; box-sizing: border-box; outline: none; }
+        .player-entry { background: rgba(255,255,255,0.03); padding: 18px; border-radius: 15px; margin-bottom: 12px; border-left: 4px solid rgba(255, 215, 0, 0.3); }
+        .player-entry label { color: var(--gold); margin-bottom: 8px; font-size: 0.8rem; }
+        .btn-container { display: flex; gap: 15px; margin-top: 40px; }
+        .btn { flex: 1; padding: 18px; border: none; border-radius: 15px; font-family: 'Anton'; font-size: 1.1rem; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
+        .btn-next, .btn-submit { background: var(--gold); color: #000; }
+        .btn-back { background: rgba(255,255,255,0.1); color: #fff; }
+        .btn:hover { transform: translateY(-3px); filter: brightness(1.1); }
+        .back-home { display: inline-block; margin-bottom: 20px; color: var(--gold); text-decoration: none; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <div class="form-card">
+        <a href="index.html" class="back-home"><i class="fas fa-chevron-left"></i> BACK TO HOME</a>
+        <h1>REGISTRATION</h1>
+        <p class="step-indicator" id="stepText">Step 1 of 2: Team Basics</p>
+        
+        <form action="https://formspree.io/f/mjgjvneq" method="POST">
+            
+            <div class="form-step active" id="step1">
+                <div class="form-group">
+                    <label><i class="fas fa-shield-halved"></i> Team Name</label>
+                    <input type="text" name="Team_Name" placeholder="Enter Team Name" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-map-marker-alt"></i> Village Name</label>
+                    <input type="text" name="Village" placeholder="Enter Village" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fab fa-whatsapp"></i> WhatsApp Number</label>
+                    <input type="tel" name="WhatsApp" placeholder="10 Digit Mobile Number" required>
+                </div>
+                <button type="button" class="btn btn-next" onclick="nextStep()">Continue to Squad <i class="fas fa-arrow-right"></i></button>
+            </div>
+
+            <div class="form-step" id="step2">
+                <h3 style="color:var(--gold); margin-bottom:20px; font-family: 'Anton';">SQUAD LIST</h3>
+                
+                <div class="player-entry" style="border-left-color: var(--gold);">
+                    <label>1. CAPTAIN (C)</label>
+                    <input type="text" name="Captain_Name" placeholder="Full Name" required>
+                </div>
+
+                <div class="player-entry" style="border-left-color: #C0C0C0;">
+                    <label>2. VICE CAPTAIN (VC)</label>
+                    <input type="text" name="VC_Name" placeholder="Full Name" required>
+                </div>
+
+                <div id="extraPlayers"></div>
+
+                <div class="btn-container">
+                    <button type="button" class="btn btn-back" onclick="prevStep()">Back</button>
+                    <button type="submit" class="btn btn-submit">Submit Registration</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Generate inputs for Player 3 to 11
+        const extraPlayersDiv = document.getElementById('extraPlayers');
+        for (let i = 3; i <= 11; i++) {
+            extraPlayersDiv.innerHTML += `
+                <div class="player-entry">
+                    <label>PLAYER ${i}</label>
+                    <input type="text" name="Player_${i}" placeholder="Full Name">
+                </div>
+            `;
+        }
+
+        // Navigation
+        function nextStep() {
+            document.getElementById('step1').classList.remove('active');
+            document.getElementById('step2').classList.add('active');
+            document.getElementById('stepText').innerText = "Step 2 of 2: Squad Details";
+            window.scrollTo(0,0);
+        }
+
+        function prevStep() {
+            document.getElementById('step2').classList.remove('active');
+            document.getElementById('step1').classList.add('active');
+            document.getElementById('stepText').innerText = "Step 1 of 2: Team Basics";
+            window.scrollTo(0,0);
+        }
+    </script>
+</body>
+</html>

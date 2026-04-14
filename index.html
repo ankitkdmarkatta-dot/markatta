@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPL 2026 | Markatta Premier League</title>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <style>
+        :root { 
+            --primary: #000a14; 
+            --accent: #FFD700; 
+            --accent-glow: rgba(255, 215, 0, 0.4); 
+            --surface: rgba(255, 255, 255, 0.05); 
+            --text-main: #ffffff; 
+            --silver: #e0e0e0;
+            --card-bg: rgba(255, 255, 255, 0.03);
+        }
+
+        * { box-sizing: border-box; outline: none; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--primary); color: var(--text-main); line-height: 1.6; overflow-x: hidden; scroll-behavior: smooth; }
+        
+        /* Hero Section */
+        .hero { height: 100vh; background: linear-gradient(to bottom, rgba(0,18,32,0.8), var(--primary)), url('https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=2000&auto=format&fit=crop'); background-size: cover; background-position: center; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
+        .mpl-logo-text { font-family: 'Anton'; font-size: clamp(4.5rem, 18vw, 9rem); line-height: 0.85; background: linear-gradient(180deg, #FFF5B7 0%, #FFD700 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 10px 30px rgba(255,215,0,0.3)); margin: 0; letter-spacing: 2px; }
+        .tagline { font-weight: 700; letter-spacing: 10px; color: white; opacity: 0.9; text-transform: uppercase; margin-bottom: 30px; font-size: clamp(0.8rem, 2vw, 1.2rem); border-top: 1px solid rgba(255,215,0,0.3); padding-top: 10px; }
+        
+        .cta-group { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+        .btn-premium { padding: 16px 35px; font-family: 'Anton'; font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; border-radius: 50px; transition: 0.4s; text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; }
+        .btn-gold { background: var(--accent); color: black; box-shadow: 0 0 20px var(--accent-glow); }
+        .btn-outline { border: 2px solid var(--accent); color: var(--accent); background: transparent; }
+        .btn-premium:hover { transform: scale(1.05); filter: brightness(1.1); }
+        
+        /* Prize Section */
+        .prize-container { display: flex; justify-content: center; gap: 25px; padding: 0 20px; margin-top: -80px; z-index: 100; position: relative; flex-wrap: wrap; }
+        .prize-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); padding: 35px 25px; border-radius: 30px; width: 280px; text-align: center; transition: 0.4s; }
+        .prize-card.main-winner { border: 2px solid var(--accent); width: 320px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .prize-amount { font-family: 'Anton'; font-size: 3rem; margin: 0; line-height: 1; }
+
+        /* Match Ground Location Upgrade */
+        .view-map-btn { margin-top: 15px; background: #ff4d4d; color: white; border: none; padding: 10px 20px; border-radius: 15px; font-weight: bold; font-size: 0.85rem; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: 0.3s; box-shadow: 0 5px 15px rgba(255, 77, 77, 0.3); }
+        .view-map-btn:hover { background: #ff3333; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255, 77, 77, 0.5); }
+
+        /* Teams Section */
+        #teams { padding: 120px 5% 80px; background: radial-gradient(circle at center, #001a33 0%, #000810 100%); }
+        .section-title { font-family: 'Anton'; font-size: 4rem; color: var(--accent); text-align: center; margin: 0; }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; margin-top: 60px; }
+        
+        .team-card { background: rgba(255,255,255,0.02); border-radius: 25px; padding: 45px 25px; text-align: center; border: 1px solid rgba(255,255,255,0.05); transition: 0.4s; cursor: pointer; position: relative; overflow: hidden; }
+        .team-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(45deg, transparent, rgba(255,215,0,0.05), transparent); transform: translateX(-100%); transition: 0.6s; }
+        .team-card:hover::before { transform: translateX(100%); }
+        .team-card:hover { transform: translateY(-10px); border-color: var(--accent); background: rgba(255,215,0,0.03); box-shadow: 0 15px 30px rgba(0,0,0,0.4); }
+        .team-logo { width: 130px; height: 130px; border-radius: 50%; border: 3px solid var(--accent); object-fit: cover; margin-bottom: 25px; }
+
+        /* MODAL DESIGN */
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeInBg { from { background: rgba(0,0,0,0); backdrop-filter: blur(0px); } to { background: rgba(0, 8, 16, 0.98); backdrop-filter: blur(20px); } }
+        .modal { display: none; position: fixed; z-index: 3000; inset: 0; animation: fadeInBg 0.4s forwards; overflow-y: auto; padding: 0; }
+        .modal-content { background: transparent; width: 100%; max-width: 900px; margin: 40px auto; padding: 20px; animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        .close-btn { position: fixed; top: 25px; right: 30px; width: 50px; height: 50px; background: var(--accent); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; z-index: 3001; box-shadow: 0 0 20px var(--accent-glow); transition: 0.3s; }
+        .squad-hero-header { text-align: center; padding: 50px 20px; background: linear-gradient(180deg, rgba(255,215,0,0.1) 0%, transparent 100%); border-radius: 40px; border: 1px solid rgba(255,215,0,0.1); margin-bottom: 40px; }
+        .modal-team-logo-big { width: 160px; height: 160px; border-radius: 50%; border: 6px solid var(--accent); box-shadow: 0 0 50px rgba(255,215,0,0.2); object-fit: cover; margin-bottom: 20px; }
+        .squad-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .player-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 20px; border-radius: 24px; display: flex; align-items: center; gap: 15px; transition: 0.4s ease; }
+        .player-card.is-captain { background: linear-gradient(90deg, rgba(255,215,0,0.15), transparent); border: 1px solid var(--accent); }
+        .p-name { font-family: 'Anton'; font-size: 1.4rem; margin: 0; color: #fff; letter-spacing: 1px; }
+        .p-role { font-size: 0.75rem; color: var(--accent); text-transform: uppercase; font-weight: 700; letter-spacing: 2px; }
+
+        footer { padding: 80px 20px; background: #000; text-align: center; border-top: 1px solid rgba(255,215,0,0.1); }
+        .contact-pill { display: inline-flex; align-items: center; gap: 15px; background: rgba(255,215,0,0.1); padding: 12px 30px; border-radius: 50px; color: var(--accent); font-weight: 700; margin-bottom: 25px; border: 1px solid rgba(255,215,0,0.2); }
+    </style>
+</head>
+<body>
+
+    <section class="hero">
+        <h1 class="mpl-logo-text">MARKATTA</h1>
+        <div class="tagline">Premier League 2026</div>
+        <p style="letter-spacing: 4px; font-weight: 300; margin-bottom: 30px; color: var(--silver);">SEASON 01 | T20 CHAMPIONSHIP</p>
+        <div class="cta-group">
+            <a href="#teams" class="btn-premium btn-outline"><i class="fas fa-users"></i> View Teams</a>
+            <a href="register.html" class="btn-premium btn-gold"><i class="fas fa-edit"></i> Register Team</a>
+        </div>
+    </section>
+
+    <div class="prize-container">
+        <div class="prize-card">
+            <i class="fas fa-medal" style="color: var(--silver); font-size: 2.5rem; margin-bottom: 15px;"></i>
+            <div class="prize-label">2nd Prize</div>
+            <h2 class="prize-amount" style="color: var(--silver);">₹ 2,000</h2>
+        </div>
+        <div class="prize-card main-winner">
+            <i class="fas fa-trophy" style="font-size: 4rem; color: var(--accent); margin-bottom: 15px;"></i>
+            <div class="prize-label">Grand Champion</div>
+            <h2 class="prize-amount" style="color: var(--accent); font-size: 4rem;">₹ 4,500</h2>
+        </div>
+        
+        <div class="prize-card">
+            <i class="fas fa-location-dot" style="color: #ff4d4d; font-size: 2.5rem; margin-bottom: 15px;"></i>
+            <div class="prize-label">Match Ground</div>
+            <h2 class="prize-amount" style="font-size: 1.8rem; margin-top: 10px;">INDPAY<br><span style="font-size: 1rem; opacity: 0.6;">STADIUM</span></h2>
+            <a href="https://maps.app.goo.gl/2ACiLcHvBVqp6qwG8" class="view-map-btn" target="_blank">
+                <i class="fas fa-map-marked-alt"></i> View Location 📍
+            </a>
+        </div>
+    </div>
+
+    <section id="teams">
+        <h2 class="section-title">THE LINEUP</h2>
+        <p style="text-align: center; opacity: 0.5; letter-spacing: 5px; text-transform: uppercase; font-size: 0.7rem;">Elite Squads Only</p>
+        <div id="teamsDisplayGrid" class="grid-container">
+            <p style="grid-column: 1/-1; text-align: center; opacity: 0.5;">Syncing Live Data...</p>
+        </div>
+    </section>
+
+    <div id="squadModal" class="modal">
+        <div class="close-btn" onclick="closeSquad()"><i class="fas fa-times"></i></div>
+        <div class="modal-content">
+            <div class="squad-hero-header">
+                <span style="background: var(--accent); color:#000; padding:5px 15px; border-radius:50px; font-size:0.7rem; font-weight:800; letter-spacing:2px;">OFFICIAL SQUAD</span>
+                <br><br>
+                <img id="modalImg" src="" class="modal-team-logo-big">
+                <h2 id="modalTeamName" style="font-family:'Anton'; font-size: 4.5rem; color: var(--accent); margin: 10px 0; line-height:1;"></h2>
+                <p id="modalVillage" style="opacity: 0.6; letter-spacing: 5px; text-transform: uppercase; font-size: 0.9rem;"></p>
+            </div>
+            <div id="modalSquadList" class="squad-grid"></div>
+            <div style="text-align:center; margin-top: 60px; opacity: 0.2;">
+                <i class="fas fa-shield-alt" style="font-size: 2rem;"></i>
+                <p>MPL VERIFIED MANAGEMENT 2026</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="contact-pill">
+            <i class="fas fa-phone-alt"></i> +91 85399 63922  |  +91 78578 01650
+        </div>
+        <p style="font-size: 0.8rem; opacity: 0.4; letter-spacing: 1px;">© 2026 MARKATTA PREMIER LEAGUE | OFFICIAL MANAGEMENT</p>
+    </footer>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://mpl-markatta-default-rtdb.firebaseio.com/" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const defaultLogo = "https://cdn-icons-png.flaticon.com/512/5323/5323530.png";
+
+        db.ref('teams').on('value', (snapshot) => {
+            const grid = document.getElementById('teamsDisplayGrid');
+            const data = snapshot.val();
+            grid.innerHTML = "";
+            if (!data) {
+                grid.innerHTML = '<p style="grid-column: 1/-1; opacity: 0.3; text-align: center;">Registration is open now.</p>';
+                return;
+            }
+            Object.keys(data).forEach((key) => {
+                const t = data[key];
+                const teamDiv = document.createElement('div');
+                teamDiv.className = "team-card";
+                teamDiv.onclick = () => openSquad(t);
+                teamDiv.innerHTML = `
+                    <img src="${t.profilePic || defaultLogo}" class="team-logo" onerror="this.src='${defaultLogo}'">
+                    <h3 style="font-family:'Anton'; font-size:2rem; margin:0; color:white;">${t.teamName.toUpperCase()}</h3>
+                    <p style="color:var(--accent); font-size:0.8rem; font-weight:700; letter-spacing:1px; margin-top:5px;">${t.village.toUpperCase()}</p>
+                    <div style="margin-top:25px; font-size:0.7rem; letter-spacing:3px; opacity:0.6; border-top: 1px solid rgba(255,255,255,0.1); padding-top:15px;">VIEW SQUAD <i class="fas fa-arrow-right"></i></div>
+                `;
+                grid.appendChild(teamDiv);
+            });
+        });
+
+        window.openSquad = function(team) {
+            document.getElementById('modalTeamName').innerText = team.teamName.toUpperCase();
+            document.getElementById('modalVillage').innerText = "📍 " + team.village;
+            document.getElementById('modalImg').src = team.profilePic || defaultLogo;
+            const list = document.getElementById('modalSquadList');
+            let squadHTML = `
+                <div class="player-card is-captain">
+                    <i class="fas fa-crown"></i>
+                    <div class="player-info">
+                        <div class="p-role">Captain / Leader</div>
+                        <h3 class="p-name">${team.captain} 🏏</h3>
+                    </div>
+                </div>
+                <div class="player-card">
+                    <i class="fas fa-shield-halved" style="color:#e0e0e0;"></i>
+                    <div class="player-info">
+                        <div class="p-role" style="color:#e0e0e0;">Vice-Captain</div>
+                        <h3 class="p-name">${team.vc || 'Not Assigned'}</h3>
+                    </div>
+                </div>
+            `;
+            if(team.squad) {
+                team.squad.forEach((p, index) => {
+                    squadHTML += `
+                        <div class="player-card">
+                            <i class="fas fa-user-circle"></i>
+                            <div class="player-info">
+                                <div class="p-role">Squad Member ${index + 1}</div>
+                                <h3 class="p-name">${p}</h3>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            list.innerHTML = squadHTML;
+            document.getElementById('squadModal').style.display = "block";
+            document.body.style.overflow = "hidden";
+        }
+
+        window.closeSquad = function() { 
+            document.getElementById('squadModal').style.display = "none"; 
+            document.body.style.overflow = "auto"; 
+        }
+    </script>
+</body>
+</html>
